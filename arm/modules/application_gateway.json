@@ -27,12 +27,11 @@
     "requestRoutingRuleName": "[concat(parameters('appName'), 'RRoutingRule', parameters('environment'))]",
 
     // resource id
-    "applicationGatewayID": "[resourceId('Microsoft.Network/applicationGateways',variables('applicationGatewayName'))]",
-    "frontendIPConfigurationID": "[concat(variables('applicationGatewayID'), '/frontendIPConfigurations/', variables('frontendIPConfigurationName'))]",
-    "frontendIPPortID": "[concat(variables('applicationGatewayID'), '/frontendPorts/', variables('frontendIPPortName'))]",
-    "httpListenerID": "[concat(variables('applicationGatewayID'), '/httpListeners/', variables('httpListenerName'))]",
-    "backendAddressPoolID": "[concat(variables('applicationGatewayID'), '/backendAddressPools/', variables('backendAddressPoolName'))]",
-    "backendHTTPSettingID": "[concat(variables('applicationGatewayID'), '/backendHttpSettingsCollection/', variables('backendHTTPSettingName'))]"
+    "frontendIPConfigurationID": "[concat(variables('applicationGatewayName'), '/frontendIPConfigurations/', variables('frontendIPConfigurationName'))]",
+    "frontendIPPortID": "[concat(variables('applicationGatewayName'), '/frontendPorts/', variables('frontendIPPortName'))]",
+    "httpListenerID": "[concat(variables('applicationGatewayName'), '/httpListeners/', variables('httpListenerName'))]",
+    "backendAddressPoolID": "[concat(variables('applicationGatewayName'), '/backendAddressPools/', variables('backendAddressPoolName'))]",
+    "backendHTTPSettingID": "[concat(variables('applicationGatewayName'), '/backendHttpSettingsCollection/', variables('backendHTTPSettingName'))]"
   },
   "resources": [
     {
@@ -127,7 +126,7 @@
   "outputs": {
     "applicationGatewayID": {
       "type": "string",
-      "value": "[variables('applicationGatewayID')]"
+      "value": "[resourceId('Microsoft.Network/applicationGateways',variables('applicationGatewayName'))]"
     },
     "backendAddressPoolID": {
       "type": "string",

@@ -11,10 +11,7 @@
   },
   "variables": {
     // resource name
-    "storageAccountName": "[toLower(concat(parameters('appName'), 'Storage', parameters('environment')))]",
-
-    // resource id
-    "storageAccountID": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+    "storageAccountName": "[toLower(concat(parameters('appName'), 'Storage', parameters('environment')))]"
   },
   "resources": [
     {
@@ -34,7 +31,6 @@
         {
           "name": "default/image",
           "type": "blobServices/containers",
-          "dependsOn": ["[variables('storageAccountID')]"],
           "apiVersion": "2019-06-01",
           "properties": {
             "publicAccess": "None"
@@ -46,7 +42,7 @@
   "outputs": {
     "storageAccountID": {
       "type": "string",
-      "value": "[variables('storageAccountID')]"
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
     }
   }
 }

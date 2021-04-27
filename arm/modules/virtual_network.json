@@ -38,8 +38,7 @@
           {
             "name": "[variables('publicSubnetName')]",
             "properties": {
-              "addressPrefix": "10.0.1.0/24",
-              "privateEndpointNetworkPolicies": "Disabled"
+              "addressPrefix": "10.0.1.0/24"
             }
           }
         ]

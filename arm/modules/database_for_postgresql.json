@@ -20,10 +20,7 @@
   },
   "variables": {
     // resource name
-    "DBforPostgreSQLName": "[concat(parameters('appName'), 'PostgreSQL', parameters('environment'))]",
-
-    // resource id
-    "DBforPostgreSQLID": "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('DBforPostgreSQLName'))]"
+    "DBforPostgreSQLName": "[concat(parameters('appName'), 'PostgreSQL', parameters('environment'))]"
   },
   "resources": [
     {
@@ -49,7 +46,6 @@
         {
           "type": "databases",
           "name": "[parameters('dbName')]",
-          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
           "apiVersion": "2017-12-01",
           "properties": {
             "charset": "UTF8",
@@ -59,7 +55,6 @@
         {
           "type": "configurations",
           "name": "tcp_keepalives_idle",
-          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
           "apiVersion": "2017-12-01",
           "properties": {
             "value": "300"
@@ -68,7 +63,6 @@
         {
           "type": "configurations",
           "name": "tcp_keepalives_interval",
-          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
           "apiVersion": "2017-12-01",
           "properties": {
             "value": "20"
@@ -77,7 +71,6 @@
         {
           "type": "configurations",
           "name": "tcp_keepalives_count",
-          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
           "apiVersion": "2017-12-01",
           "properties": {
             "value": "20"
@@ -89,7 +82,7 @@
   "outputs": {
     "DBforPostgreSQLID": {
       "type": "string",
-      "value": "[variables('DBforPostgreSQLID')]"
+      "value": "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('DBforPostgreSQLName'))]"
     }
   }
 }

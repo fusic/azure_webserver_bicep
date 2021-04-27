@@ -32,13 +32,7 @@
     "deploymentVMSSName": "[concat(parameters('appName'), 'CreateVMSS', parameters('environment'))]",
     "deploymentPostgreSQLName": "[concat(parameters('appName'), 'CreatePostgreSQL', parameters('environment'))]",
     "deploymentPrivateEndpointName": "[concat(parameters('appName'), 'CreatePrivateEndpoint', parameters('environment'))]",
-    "deploymentStorageAccountName": "[concat(parameters('appName'), 'CreateStorageAccount', parameters('environment'))]",
-
-    // deployments id
-    "deploymentVirtualNetworkID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentVirtualNetworkName'))]",
-    "deploymentGatewayIPID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentGatewayIPName'))]",
-    "deploymentApplicationGatewayID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentApplicationGatewayName'))]",
-    "deploymentPostgreSQLID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentPostgreSQLName'))]"
+    "deploymentStorageAccountName": "[concat(parameters('appName'), 'CreateStorageAccount', parameters('environment'))]"
   },
   "resources": [
     // Virtual Network
@@ -86,7 +80,6 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2020-06-01",
       "name": "[variables('deploymentApplicationGatewayName')]",
-      "dependsOn": ["[variables('deploymentVirtualNetworkID')]", "[variables('deploymentGatewayIPID')]"],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -103,7 +96,7 @@
             "value": "[reference(variables('deploymentVirtualNetworkName')).outputs.gatewaySubnetID.value]"
           },
           "gatewayIPID": {
-            "value": "[reference(variables('deploymentGatewayIPID')).outputs.gatewayIPID.value]"
+            "value": "[reference(variables('deploymentGatewayIPName')).outputs.gatewayIPID.value]"
           }
         }
       }
@@ -113,7 +106,6 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2020-06-01",
       "name": "[variables('deploymentVMSSName')]",
-      "dependsOn": ["[variables('deploymentApplicationGatewayID')]"],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -172,7 +164,6 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2020-06-01",
       "name": "[variables('deploymentPrivateEndpointName')]",
-      "dependsOn": ["[variables('deploymentVirtualNetworkID')]", "[variables('deploymentPostgreSQLID')]"],
       "properties": {
         "mode": "Incremental",
         "templateLink": {

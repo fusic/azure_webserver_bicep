@@ -19,10 +19,7 @@
     // resource name
     "endpointName": "[concat(parameters('appName'), 'Endpoint', parameters('environment'))]",
     "serviceConnectionName": "[concat(parameters('appName'), 'ServiceConnection', parameters('environment'))]",
-    "privateDnsZoneName": "privatelink.postgres.database.azure.com",
-
-    // resource id
-    "privateDnsZoneID": "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+    "privateDnsZoneName": "privatelink.postgres.database.azure.com"
   },
   "resources": [
     {
@@ -59,7 +56,7 @@
       "apiVersion": "2018-09-01",
       "name": "[concat(variables('privateDnsZoneName'), '/postgresql')]",
       "dependsOn": [
-        "[variables('privateDnsZoneID')]"
+        "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
       ],
       "properties": {
         "ttl": 3600,
