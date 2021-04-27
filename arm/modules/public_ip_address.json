@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    // resource name
+    "gatewayIPName": "[concat(parameters('appName'), 'GatewayIP', parameters('environment'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('gatewayIPName')]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2020-05-01",
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      },
+      "sku": {
+        "name": "Standard"
+      }
+    }
+  ],
+  "outputs": {
+    "gatewayIPID": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Network/publicIPAddresses', variables('gatewayIPName'))]"
+    }
+  }
+}

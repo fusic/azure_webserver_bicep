@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    // resource name
+    "virtualNetworkName": "[concat(parameters('appName'), 'Vnet', parameters('environment'))]",
+    "gatewaySubnetName": "[concat(parameters('appName'), 'GatewaySubnet', parameters('environment'))]",
+    "publicSubnetName": "[concat(parameters('appName'), 'PublicSubnet', parameters('environment'))]",
+
+    // resource id
+    "virtualNetworkID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('virtualNetworkName')]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": ["10.0.0.0/16"]
+        },
+        "subnets": [
+          {
+            "name": "[variables('gatewaySubnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24"
+            }
+          },
+          {
+            "name": "[variables('publicSubnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.1.0/24",
+              "privateEndpointNetworkPolicies": "Disabled"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "virtualNetworkID": {
+      "type": "string",
+      "value": "[variables('virtualNetworkID')]"
+    },
+    "gatewaySubnetID": {
+      "type": "string",
+      "value": "[concat(variables('virtualNetworkID'), '/subnets/', variables('gatewaySubnetName'))]"
+    },
+    "publicSubnetID": {
+      "type": "string",
+      "value": "[concat(variables('virtualNetworkID'), '/subnets/', variables('publicSubnetName'))]"
+    }
+  }
+}

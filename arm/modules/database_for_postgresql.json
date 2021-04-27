@@ -1,0 +1,95 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "dbName": {
+      "type": "string"
+    },
+    "dbUser": {
+      "type": "string"
+    },
+    "dbPassword": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    // resource name
+    "DBforPostgreSQLName": "[concat(parameters('appName'), 'PostgreSQL', parameters('environment'))]",
+
+    // resource id
+    "DBforPostgreSQLID": "[resourceId('Microsoft.DBforPostgreSQL/servers', variables('DBforPostgreSQLName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DBforPostgreSQL/servers",
+      "apiVersion": "2017-12-01",
+      "name": "[variables('DBforPostgreSQLName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "GP_Gen5_2"
+      },
+      "properties": {
+        "createMode": "Default",
+        "version": "11",
+        "administratorLogin": "[parameters('dbUser')]",
+        "administratorLoginPassword": "[parameters('dbPassword')]",
+        "storageProfile": {
+          "storageMB": 102400,
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Enabled"
+        }
+      },
+      "resources": [
+        {
+          "type": "databases",
+          "name": "[parameters('dbName')]",
+          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
+          "apiVersion": "2017-12-01",
+          "properties": {
+            "charset": "UTF8",
+            "collation": "English_United States.1252"
+          }
+        },
+        {
+          "type": "configurations",
+          "name": "tcp_keepalives_idle",
+          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
+          "apiVersion": "2017-12-01",
+          "properties": {
+            "value": "300"
+          }
+        },
+        {
+          "type": "configurations",
+          "name": "tcp_keepalives_interval",
+          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
+          "apiVersion": "2017-12-01",
+          "properties": {
+            "value": "20"
+          }
+        },
+        {
+          "type": "configurations",
+          "name": "tcp_keepalives_count",
+          "dependsOn": ["[variables('DBforPostgreSQLID')]"],
+          "apiVersion": "2017-12-01",
+          "properties": {
+            "value": "20"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "DBforPostgreSQLID": {
+      "type": "string",
+      "value": "[variables('DBforPostgreSQLID')]"
+    }
+  }
+}

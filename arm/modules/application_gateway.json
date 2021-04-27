@@ -1,0 +1,137 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "gatewaySubnetID": {
+      "type": "string"
+    },
+    "gatewayIPID": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    // resource name
+    "applicationGatewayName": "[concat(parameters('appName'), 'ApplicationGateway', parameters('environment'))]",
+    "gatewayIPConfigurationName": "[concat(parameters('appName'), 'GIPConfiguration', parameters('environment'))]",
+    "frontendIPConfigurationName": "[concat(parameters('appName'), 'FIPConfiguration', parameters('environment'))]",
+    "frontendIPPortName": "[concat(parameters('appName'), 'FIPPort', parameters('environment'))]",
+    "httpListenerName": "[concat(parameters('appName'), 'HTTPListener', parameters('environment'))]",
+    "backendAddressPoolName": "[concat(parameters('appName'), 'BAddressPool', parameters('environment'))]",
+    "backendHTTPSettingName": "[concat(parameters('appName'), 'BSetting', parameters('environment'))]",
+    "requestRoutingRuleName": "[concat(parameters('appName'), 'RRoutingRule', parameters('environment'))]",
+
+    // resource id
+    "applicationGatewayID": "[resourceId('Microsoft.Network/applicationGateways',variables('applicationGatewayName'))]",
+    "frontendIPConfigurationID": "[concat(variables('applicationGatewayID'), '/frontendIPConfigurations/', variables('frontendIPConfigurationName'))]",
+    "frontendIPPortID": "[concat(variables('applicationGatewayID'), '/frontendPorts/', variables('frontendIPPortName'))]",
+    "httpListenerID": "[concat(variables('applicationGatewayID'), '/httpListeners/', variables('httpListenerName'))]",
+    "backendAddressPoolID": "[concat(variables('applicationGatewayID'), '/backendAddressPools/', variables('backendAddressPoolName'))]",
+    "backendHTTPSettingID": "[concat(variables('applicationGatewayID'), '/backendHttpSettingsCollection/', variables('backendHTTPSettingName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "name": "[variables('applicationGatewayName')]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2020-08-01",
+      "properties": {
+        "sku": {
+          "name": "Standard_v2",
+          "tier": "Standard_v2",
+          "capacity": 2
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "[variables('gatewayIPConfigurationName')]",
+            "properties": {
+              "subnet": {
+                "id": "[parameters('gatewaySubnetID')]"
+              }
+            }
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "[variables('frontendIPConfigurationName')]",
+            "properties": {
+              "PublicIPAddress": {
+                "id": "[parameters('gatewayIPID')]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "[variables('frontendIPPortName')]",
+            "properties": {
+              "Port": 80
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "[variables('backendAddressPoolName')]"
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "[variables('backendHTTPSettingName')]",
+            "properties": {
+              "Port": 80,
+              "Protocol": "Http",
+              "CookieBasedAffinity": "Disabled"
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "[variables('httpListenerName')]",
+            "properties": {
+              "FrontendIPConfiguration": {
+                "Id": "[variables('frontendIPConfigurationID')]"
+              },
+              "FrontendPort": {
+                "Id": "[variables('frontendIPPortID')]"
+              },
+              "Protocol": "Http",
+              "SslCertificate": null
+            }
+          }
+        ],
+        "requestRoutingRules": [
+          {
+            "name": "[variables('requestRoutingRuleName')]",
+            "properties": {
+              "RuleType": "Basic",
+              "httpListener": {
+                "id": "[variables('httpListenerID')]"
+              },
+              "backendAddressPool": {
+                "id": "[variables('backendAddressPoolID')]"
+              },
+              "backendHttpSettings": {
+                "id": "[variables('backendHTTPSettingID')]"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "applicationGatewayID": {
+      "type": "string",
+      "value": "[variables('applicationGatewayID')]"
+    },
+    "backendAddressPoolID": {
+      "type": "string",
+      "value": "[variables('backendAddressPoolID')]"
+    }
+  }
+}

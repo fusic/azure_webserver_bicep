@@ -1,0 +1,218 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "dbName": {
+      "type": "string"
+    },
+    "dbUser": {
+      "type": "string"
+    },
+    "dbPassword": {
+      "type": "string"
+    },
+    "keyData": {
+      "type": "string",
+      "metadata": {
+        "description": "SSH public key certificate used to authenticate with the VM through ssh. The key needs to be at least 2048-bit and in ssh-rsa format. "
+      }
+    }
+  },
+  "variables": {
+    // deployments name
+    "deploymentVirtualNetworkName": "[concat(parameters('appName'), 'CreateVirtualNetwork', parameters('environment'))]",
+    "deploymentGatewayIPName": "[concat(parameters('appName'), 'CreateGateway', parameters('environment'))]",
+    "deploymentApplicationGatewayName": "[concat(parameters('appName'), 'CreateApplicationGateway', parameters('environment'))]",
+    "deploymentVMSSName": "[concat(parameters('appName'), 'CreateVMSS', parameters('environment'))]",
+    "deploymentPostgreSQLName": "[concat(parameters('appName'), 'CreatePostgreSQL', parameters('environment'))]",
+    "deploymentPrivateEndpointName": "[concat(parameters('appName'), 'CreatePrivateEndpoint', parameters('environment'))]",
+    "deploymentStorageAccountName": "[concat(parameters('appName'), 'CreateStorageAccount', parameters('environment'))]",
+
+    // deployments id
+    "deploymentVirtualNetworkID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentVirtualNetworkName'))]",
+    "deploymentGatewayIPID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentGatewayIPName'))]",
+    "deploymentApplicationGatewayID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentApplicationGatewayName'))]",
+    "deploymentPostgreSQLID": "[resourceId('Microsoft.Resources/deployments', variables('deploymentPostgreSQLName'))]"
+  },
+  "resources": [
+    // Virtual Network
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('deploymentVirtualNetworkName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "./modules/virtual_network.json"
+        },
+        "parameters": {
+          "appName": {
+            "value": "[parameters('appName')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          }
+        }
+      }
+    },
+    // Application Gateway用のPublic IP
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('deploymentGatewayIPName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "./modules/public_ip_address.json"
+        },
+        "parameters": {
+          "appName": {
+            "value": "[parameters('appName')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          }
+        }
+      }
+    },
+    // Application Gateway
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('deploymentApplicationGatewayName')]",
+      "dependsOn": ["[variables('deploymentVirtualNetworkID')]", "[variables('deploymentGatewayIPID')]"],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "./modules/application_gateway.json"
+        },
+        "parameters": {
+          "appName": {
+            "value": "[parameters('appName')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "gatewaySubnetID": {
+            "value": "[reference(variables('deploymentVirtualNetworkName')).outputs.gatewaySubnetID.value]"
+          },
+          "gatewayIPID": {
+            "value": "[reference(variables('deploymentGatewayIPID')).outputs.gatewayIPID.value]"
+          }
+        }
+      }
+    },
+    // Virtual Machine Scale Set
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('deploymentVMSSName')]",
+      "dependsOn": ["[variables('deploymentApplicationGatewayID')]"],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "./modules/virtual_machine_scale_set.json"
+        },
+        "parameters": {
+          "appName": {
+            "value": "[parameters('appName')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "publicSubnetID": {
+            "value": "[reference(variables('deploymentVirtualNetworkName')).outputs.publicSubnetID.value]"
+          },
+          "backendAddressPoolID": {
+            "value": "[reference(variables('deploymentApplicationGatewayName')).outputs.backendAddressPoolID.value]"
+          },
+          "keyData": {
+            "value": "[parameters('keyData')]"
+          }
+        }
+      }
+    },
+    // Database for PostgreSQL
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('deploymentPostgreSQLName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "./modules/database_for_postgresql.json"
+        },
+        "parameters": {
+          "appName": {
+            "value": "[parameters('appName')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "dbName": {
+            "value": "[parameters('dbName')]"
+          },
+          "dbUser": {
+            "value": "[parameters('dbUser')]"
+          },
+          "dbPassword": {
+            "value": "[parameters('dbPassword')]"
+          }
+        }
+      }
+    },
+    // Private Endpoint
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('deploymentPrivateEndpointName')]",
+      "dependsOn": ["[variables('deploymentVirtualNetworkID')]", "[variables('deploymentPostgreSQLID')]"],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "./modules/private_endpoint.json"
+        },
+        "parameters": {
+          "appName": {
+            "value": "[parameters('appName')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          },
+          "subnetID": {
+            "value": "[reference(variables('deploymentVirtualNetworkName')).outputs.publicSubnetID.value]"
+          },
+          "DBForPostgreSQLID": {
+            "value": "[reference(variables('deploymentPostgreSQLName')).outputs.DBforPostgreSQLID.value]"
+          }
+        }
+      }
+    },
+    // StorageAccount
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "[variables('deploymentStorageAccountName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "./modules/storage_account.json"
+        },
+        "parameters": {
+          "appName": {
+            "value": "[parameters('appName')]"
+          },
+          "environment": {
+            "value": "[parameters('environment')]"
+          }
+        }
+      }
+    }
+  ]
+}

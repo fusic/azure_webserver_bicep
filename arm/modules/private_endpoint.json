@@ -1,0 +1,74 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "subnetID": {
+      "type": "string"
+    },
+    "DBForPostgreSQLID": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    // resource name
+    "endpointName": "[concat(parameters('appName'), 'Endpoint', parameters('environment'))]",
+    "serviceConnectionName": "[concat(parameters('appName'), 'ServiceConnection', parameters('environment'))]",
+    "privateDnsZoneName": "privatelink.postgres.database.azure.com",
+
+    // resource id
+    "privateDnsZoneID": "[resourceId('Microsoft.Network/privateDnsZones', variables('privateDnsZoneName'))]"
+  },
+  "resources": [
+    {
+      "name": "[variables('endpointName')]",
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2020-08-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "subnet": {
+          "id": "[parameters('subnetID')]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "properties": {
+              "privateLinkServiceId": "[parameters('DBForPostgreSQLID')]",
+              "groupIds": [
+                "postgresqlServer"
+              ]
+            },
+            "name": "[variables('serviceConnectionName')]"
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('privateDnsZoneName')]",
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2018-09-01",
+      "location": "global",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/A",
+      "apiVersion": "2018-09-01",
+      "name": "[concat(variables('privateDnsZoneName'), '/postgresql')]",
+      "dependsOn": [
+        "[variables('privateDnsZoneID')]"
+      ],
+      "properties": {
+        "ttl": 3600,
+        "aRecords": [
+          {
+            "ipv4Address": "[first(first(reference(variables('endpointName')).customDnsConfigs).ipAddresses)]"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string"
+    },
+    "publicSubnetID": {
+      "type": "string"
+    },
+    "backendAddressPoolID": {
+      "type": "string"
+    },
+    "keyData": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    // resource name
+    "vmssName": "[concat(parameters('appName'), 'VMSS', parameters('environment'))]",
+    "ipConfigurationName": "[concat(parameters('appName'), 'IPConfigration', parameters('environment'))]",
+    "nicName": "[concat(parameters('appName'), 'NIC', parameters('environment'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/virtualMachineScaleSets",
+      "name": "[variables('vmssName')]",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2020-12-01",
+      "sku": {
+        "name": "Standard_B1ms",
+        "tier": "Standard",
+        "capacity": 2
+      },
+      "properties": {
+        "overprovision": true,
+        "singlePlacementGroup": false,
+        "upgradePolicy": {
+          "mode": "Automatic"
+        },
+        "virtualMachineProfile": {
+          "storageProfile": {
+            "osDisk": {
+              "caching": "ReadWrite",
+              "createOption": "FromImage"
+            },
+            "dataDisks": [],
+            "imageReference": {
+              "publisher": "OpenLogic",
+              "offer": "CentOS",
+              "sku": "7-CI",
+              "version": "latest"
+            }
+          },
+          "osProfile": {
+            "adminUsername": "azureuser",
+            "computerNamePrefix": "[variables('vmssName')]",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": true,
+              "ssh": {
+                "publicKeys": [
+                  {
+                    "path": "/home/azureuser/.ssh/authorized_keys",
+                    "keyData": "[parameters('keyData')]"
+                  }
+                ]
+              }
+            }
+          },
+          "networkProfile": {
+            "networkInterfaceConfigurations": [
+              {
+                "name": "[variables('nicName')]",
+                "properties": {
+                  "primary": true,
+                  "ipConfigurations": [
+                    {
+                      "name": "[variables('ipConfigurationName')]",
+                      "properties": {
+                        "subnet": {
+                          "id": "[parameters('publicSubnetID')]"
+                        },
+                        "ApplicationGatewayBackendAddressPools": [
+                          {
+                            "id": "[parameters('backendAddressPoolID')]"
+                          }
+                        ],
+                        "publicIPAddressConfiguration": {
+                          "name": "public_ip"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
